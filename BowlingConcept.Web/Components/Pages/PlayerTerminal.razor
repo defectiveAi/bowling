@@ -1,0 +1,65 @@
+﻿@page "/"
+@using BowlingConcept.Web.Client
+
+@attribute [StreamRendering(true)]
+@attribute [OutputCache(Duration = 5)]
+@rendermode InteractiveServer
+
+@inject BowlingApiClient BowlingApi
+
+<PageTitle>Bowling Concept</PageTitle>
+
+@if (_bowlingLanes == null)
+{
+	<p><em>Loading...</em></p>
+}
+else
+{
+	<div>
+		<div class="tab-container">
+			@for (var l = 0; l < _bowlingLanes.Length; l++)
+			{
+				var laneId = _bowlingLanes[l];
+				<div class="@(laneId == _currentLane ? "tab active" : "tab")" @onclick="() => SwitchToLane(laneId)">Lane <span>#@(l + 1)</span></div>
+			}
+		</div>
+
+		@if (_currentLane != null)
+		{
+			<div class="scoreboard-container">
+				<BowlingGame LaneId="_currentLane.Value" />
+			</div>
+
+			@for (var i = 1; i <= 3; i++)
+			{
+				var playerCount = i;
+				<button class="new-game-button" @onclick="async () => await StartNewGame(playerCount)">New game with @playerCount player(s)</button>
+			}
+		}
+
+	</div>
+}
+
+@code {
+	private Guid[]? _bowlingLanes;
+	private Guid? _currentLane;
+
+	protected override async Task OnInitializedAsync()
+	{
+		_bowlingLanes = await BowlingApi.GetBowlingLanesAsync();
+	}
+
+	private void SwitchToLane(Guid laneId)
+	{
+		_currentLane = laneId;
+	}
+
+	private async Task StartNewGame(int players)
+	{
+		if (_currentLane != null)
+		{
+			string[] names = ["Bob", "Alice", "Eve"];
+			await BowlingApi.StartNewGameAsync(_currentLane.Value, names.Take(players));
+		}
+	}
+}

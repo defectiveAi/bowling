@@ -1,0 +1,112 @@
+﻿@using BowlingConcept.Web.Client
+@rendermode InteractiveServer
+
+@inject BowlingApiClient BowlingApi
+
+@if (_activeScoreboard == null)
+{
+	<p><em>Loading...</em></p>
+}
+else if (_activeScoreboard.Scorecards.Length == 0)
+{
+}
+else
+{
+	var max = _activeScoreboard.Scorecards.Max(card => card.Frames.Length);
+
+	<h3>Scoreboard</h3>
+
+	<table class="scoreboard">
+		<thead>
+			<tr>
+				<th>Player</th>
+				@for (int f = 1; f <= max; f++)
+				{
+					<th>@f</th>
+				}
+				<th>Score</th>
+			</tr>
+		</thead>
+		<tbody>
+			@foreach (var scorecard in _activeScoreboard.Scorecards)
+			{
+				<tr>
+					<td>@scorecard.PlayerName</td>
+					@foreach (var frame in FillEmptyFrames(scorecard.Frames, max))
+					{
+						<td>
+							@foreach (var roll in FillEmptyRolls(frame.Rolls))
+							{
+								<div class="scoreboard roll">
+									@if (roll != null)
+									{
+										<span>@roll</span>
+									}
+									else
+									{
+										<span>-</span>
+									}
+								</div>
+							}
+						</td>
+					}
+					<td class="scoreboard score">@scorecard.Score</td>
+				</tr>
+			}
+		</tbody>
+	</table>
+
+	<div>
+		<hr />
+		<h5>Simulate roll</h5>
+
+		@for (int f = 0; f <= 10; f++)
+		{
+			var captured = f;
+			<button class="pin-button" @onclick="async () => await SubmitScoreAsync(captured)">@f</button>
+		}
+	</div>
+}
+
+@code {
+
+	[Parameter]
+	public Guid LaneId { get; set; }
+
+	private ScoreboardDto? _activeScoreboard;
+	private Timer? _scoreboardRefresh;
+
+	protected override void OnInitialized()
+	{
+		_scoreboardRefresh = new Timer(_ => RefreshCurrentLane(), null, 0, 250);
+	}
+
+	protected override async Task OnParametersSetAsync()
+	{
+		_activeScoreboard = await BowlingApi.GetScoreboardAsync(LaneId);
+	}
+
+	private async void RefreshCurrentLane()
+	{
+		_activeScoreboard = await BowlingApi.GetScoreboardAsync(LaneId);
+		await InvokeAsync(StateHasChanged);
+	}
+
+	private async Task SubmitScoreAsync(int value)
+	{
+		await BowlingApi.ToppleBowlingPinsAsync(LaneId, value);
+		RefreshCurrentLane();
+	}
+
+	private IEnumerable<FrameDto> FillEmptyFrames(FrameDto[] frames, int max)
+	{
+		var fill = Enumerable.Range(0, max - frames.Length).Select(_ => new FrameDto());
+		return frames.Concat(fill);
+	}
+
+	private IEnumerable<int?> FillEmptyRolls(int[] rolls)
+	{
+		var fill = Enumerable.Range(0, Math.Max(2 - rolls.Length, 0)).Select(_ => (int?)null);
+		return rolls.Cast<int?>().Concat(fill);
+	}
+}
