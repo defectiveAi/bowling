@@ -9,10 +9,15 @@
   * I have never used Blazor before, so there code there "just good enough".
 
 **How to Run:**
-To start the application, install .net 9 SDK, navigate to the `AppHost` directory and run:
+1) Install .net 9 SDK.
+2) Run:
 
 ```
+cd BowlingConcept.AppHost
 dotnet run
 ```
 
-The console should print a URL that can be navigated to, to access the debug frontend.
+3) The console should print a URL that can be navigated to, e.g. `https://localhost:17177`.
+4) On the Resources page, find `webfrontend` and navigate to URL, e.g. `https://localhost:7104`
+
+<img width="697" alt="image" src="https://github.com/user-attachments/assets/c55b9ab0-8543-4b8f-be08-9e58f4df6d9d" />
